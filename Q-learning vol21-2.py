@@ -4,7 +4,7 @@
 # 拠点数7
 # 状態数＝802,816（5*4096）, 行動数=7
 # 状態定義
-# ＝　現在いる拠点 
+# ＝　現在いる拠点
 # + [要求が満たされたか，他の拠点が欲している食品を持っているか]（2bit×5拠点）（10bit＝1024通り）
 # + 現在の1ステップ前にいた拠点
 # 報酬は全配送終了後+1，かつ現在の最短距離と等しいまたはより短い場合は+10
@@ -17,7 +17,6 @@
 # 結果を出力
 
 import random
-import sys
 import os
 import csv
 from copy import deepcopy
@@ -28,9 +27,11 @@ import matplotlib.pyplot as plt
 DIR_PATH = os.path.dirname(os.path.abspath(__file__))
 
 
-GAMMA = 0.6                        # 割引率，未来の報酬の価値(Discount factor, Worth of future rewards)
+# 割引率，未来の報酬の価値(Discount factor, Worth of future rewards)
+GAMMA = 0.6
 ALPHA = 0.05                         # 学習率(Learning rate)
-EPSILON = 1                         # ε，ランダムに探索をする確率の初期値(Initial value of probabiolity of random exploration)
+# ε，ランダムに探索をする確率の初期値(Initial value of probabiolity of random exploration)
+EPSILON = 1
 MAX_EPISODES = 200000                # 最大エピソード数(Maximum number of episodes)
 MAX_STEPS = 50                      # 最大ステップ数(Maximum number of steps)
 
@@ -142,18 +143,13 @@ class QLearning:
 
         np.set_printoptions(suppress=True)
 
-
-
     def load_city(self):
         # 都市の座標をファイルから読み込み(Load the coordinates of cities from file)
         with open(os.path.join(DIR_PATH, "city7.txt"), "r") as city_file:
             city_reader = csv.reader(city_file)
             self.cities = [[int(c) for c in row] for row in city_reader]
 
-
-
     def run(self):
-        
 
         global EPSILON, ALPHA
         global temp_stocks, temp_requirements, temp_surpluses, requirement_status, surpluse_status
@@ -173,16 +169,14 @@ class QLearning:
 
         # print("STOCKS : {}".format(stocks))
 
-
         # エピソードごとのループ(Start loop for an episode)
-        for i in range(MAX_EPISODES+1):
+        for i in range(MAX_EPISODES + 1):
 
             step_count = 0
             reward_per_episode = 0
             finish_flag = False
             go_back_flag = False
             # print("------Episode: {}------".format(i))
-
 
             self.initialize_cargo()
             self.visited = [0 for _ in range(N)]
@@ -193,12 +187,11 @@ class QLearning:
             requirement_status = [0 for _ in range(N)]
             surpluse_status = [0 for _ in range(N)]
 
-
             # 状態に出発点を設定(Give start position of cities(state))
             current_city = 0
 
             self.load_and_unload_foods(current_city, mode)
-            self.check_delivery_status()            
+            self.check_delivery_status()
 
             state_status = 0
             for digit, (flag_r, flag_s) in enumerate(zip(requirement_status, surpluse_status)):
@@ -207,13 +200,11 @@ class QLearning:
                 if flag_s == 1:
                     state_status += pow(2, 2 * digit + 1)
 
-            state = pow(4, N) * ( N * current_city + current_city ) + state_status
-
-        
+            state = pow(4, N) * (N * current_city +
+                                 current_city) + state_status
 
             # 出発都市をルートに追加(Add start city to the route)
             self.route.append(current_city)
-
 
             if i % GREEDY_CYCLE == 0:
                 mode = 1
@@ -226,16 +217,13 @@ class QLearning:
             else:
                 mode = 0
 
-
-
             # ステップごとのループ(Start loop for each step)
             while True:
 
                 # print("---Step : {}---".format(j))
 
-                
                 if mode == 1:
-                    if go_back_flag == True:
+                    if go_back_flag is True:
                         action = 0
                     else:
                         action = self.choose_action_greedy(state, current_city)
@@ -247,11 +235,11 @@ class QLearning:
                     # print()
                 else:
                     # ε-greedy法を用いて行動(次の都市)を選択(Choose next action(destination) by using epsilon-greedy algorithm)
-                    if go_back_flag == True:
+                    if go_back_flag is True:
                         action = 0
                     else:
-                        action = self.choose_action_epsilon_greedy(state, current_city)
-                
+                        action = self.choose_action_epsilon_greedy(
+                            state, current_city)
 
                 # print("STATE : {}".format(state))
                 # print("ACTION ===> {}".format(action))
@@ -267,8 +255,8 @@ class QLearning:
                     if flag_s == 1:
                         state_status += pow(2, 2 * digit + 1)
 
-                next_state = pow(4, N) * ( N * action + current_city ) + state_status
-
+                next_state = pow(4, N) * (N * action +
+                                          current_city) + state_status
 
                 # 選択した都市をルートに追加(Add selected city to the route)
                 self.route.append(action)
@@ -277,20 +265,19 @@ class QLearning:
                 #     print(self.route)
                 #     print(next_state)
 
-
                 reward = 0
 
                 # print("REWARD(DISTANCE) : {}".format(reward))
                 # reward_per_episode += reward
 
-                if all(requirement_status) == True:
+                if all(requirement_status) is True:
                     go_back_flag = True
                     if action == 0:
                         finish_flag = True
                         reward = 1
 
                         all_distance = self.calcDistance()
-                        
+
                         # d = [343, 406, 413]
                         # if all_distance in d:
                         #     print(all_distance, self.route)
@@ -307,30 +294,24 @@ class QLearning:
                             self.min_distance = all_distance
                             self.min_route = deepcopy(self.route)
                             self.min_state = state
-                            
-                        
-
 
                 if step_count >= MAX_STEPS:
                     all_distance = None
                     finish_flag = True
                     # reward = -1
 
-
-
                 if mode != 1:
-                    if all(requirement_status) == True and finish_flag == True:
+                    if all(requirement_status) is True and finish_flag is True:
                         self.learn_goal(state, action, reward)
                     else:
                         # Q値を更新(Update Q-value)
                         self.learn(state, action, reward, next_state)
 
-
                 # print(self.Q.astype(float))
 
                 # 全ての制約を満たしたとき(When all constraints are satisfied)
 
-                if finish_flag == True:
+                if finish_flag is True:
                     if ALPHA > MIN_ALPHA:
                         ALPHA -= alpha_step
                     else:
@@ -341,24 +322,22 @@ class QLearning:
                     else:
                         EPSILON = MIN_EPSILON
 
-
                     if mode == 1:
                         # print("ROUTE : {}".format(self.route))
                         # print("DISTANCE : {}".format(all_distance))
                         # print("EPSILON : {}".format(EPSILON))
-                        # print("ALPHA : {}".format(ALPHA))       
+                        # print("ALPHA : {}".format(ALPHA))
                         # print("MIN DISTANCE : {}".format(self.min_distance))
                         # print("MIN STATE : {}".format(self.min_state))
                         # print("163839 : {}".format(self.Q[163839][0]))
                         # print("REWARD : {}".format(reward))
-                        # print("MIN ROUTE : {}".format(self.min_route))       
+                        # print("MIN ROUTE : {}".format(self.min_route))
                         # print()
                         self.result.append([i, all_distance, EPSILON, ALPHA])
                         self.greedy_distance.append(all_distance)
-                        
 
                     # print("ROUTE : {}".format(self.route))
-                    
+
                     # 次のエピソードに進む(Move on to next episode)
                     break
 
@@ -366,9 +345,6 @@ class QLearning:
                 state = next_state
                 current_city = action
                 step_count += 1
-
-            
-
 
             # ルートを初期化(Initialize route)
             self.route = []
@@ -379,7 +355,6 @@ class QLearning:
             # print(self.Q.astype(float))
             # if i == 70000:
             #     break
-
 
         # print()
         # print("Route : {}".format(self.min_route))
@@ -413,14 +388,13 @@ class QLearning:
         # self.print_reward_graph()
         # self.print_distance_graph()
 
-
     def choose_action_epsilon_greedy(self, state, current_city):
         global requirement_status, surpluse_status
         action = current_city
         if np.random.rand() <= EPSILON:
             # while action not in self.remaining_city:
             while action == current_city:
-                action = random.randint(0, N-1)
+                action = random.randint(0, N - 1)
             return action
         else:
             i = 0
@@ -428,10 +402,9 @@ class QLearning:
             while action == current_city:
                 action = sortedQ[i]
                 i += 1
-                if i >= N-1:
+                if i >= N - 1:
                     break
             return action
-
 
     def choose_action_greedy(self, state, current_city):
         global requirement_status, surpluse_status
@@ -441,12 +414,9 @@ class QLearning:
         while action == current_city:
             action = sortedQ[i].astype(int)
             i += 1
-            if i >= N-1:
+            if i >= N - 1:
                 break
         return action
-
-
-
 
     def learn(self, state, action, reward, next_state):
         # Q値の最大値(Maximum value of Q-value)
@@ -462,10 +432,9 @@ class QLearning:
         predict = self.Q[state, action]
         target = reward + GAMMA * max_next_Q
 
-        self.Q[state, action] += ALPHA * (target - predict)     # Q値を更新(Update Q function)
+        self.Q[state, action] += ALPHA * \
+            (target - predict)     # Q値を更新(Update Q function)
         # print(self.Q[state, action])
-
-
 
     def learn_goal(self, state, action, reward):
         # if state == self.min_state and reward != 10:
@@ -474,16 +443,13 @@ class QLearning:
         predict = self.Q[state, action]
         target = reward
 
-        self.Q[state, action] += ALPHA * (target - predict)     # Q値を更新(Update Q function)
+        self.Q[state, action] += ALPHA * \
+            (target - predict)     # Q値を更新(Update Q function)
 
         # if reward == 10:
         #     print(state, action, predict)
 
         # print(self.Q[state, action])
-
-
-
-
 
     def calcDistance(self):
 
@@ -501,16 +467,16 @@ class QLearning:
         for i in range(len(self.route)):
 
             # ルートの末尾でないなら(If it is not the end of route)
-            if i != len(self.route)-1:
+            if i != len(self.route) - 1:
                 # 次の都市のx座標(X coordinate of the destination)
-                destination_x = self.cities[self.route[i+1]][0]
+                destination_x = self.cities[self.route[i + 1]][0]
                 # 次の都市のy座標(Y coordinate of the destination)
-                destination_y = self.cities[self.route[i+1]][1]
+                destination_y = self.cities[self.route[i + 1]][1]
                 # 次の都市のベクトルを生成(Generate vector of the destination)
                 destination = np.array([destination_x, destination_y])
 
                 # 2点間のベクトルの距離を求めて加算(Calculate and add distance of vector between 2 cities)
-                distance += int(np.linalg.norm(destination-start))
+                distance += int(np.linalg.norm(destination - start))
 
                 # 今の目的地を次のスタート地点に更新(Replace start with destination)
                 start = destination.copy()
@@ -520,8 +486,6 @@ class QLearning:
 
         return distance
 
-
-
     def initialize_cargo(self):
         global foods_in_cargo, required_food
         for name in foods:
@@ -529,17 +493,12 @@ class QLearning:
         required_food = []
         # print("CURRENT CARGO = {}".format(foods_in_cargo))
 
-
-
-
     def calcVolume(self):
         global foods_in_cargo
         volume = 0
         for name, quantity in foods_in_cargo.items():
             volume += quantity * foods[name]
         return volume
-
-
 
     def load_and_unload_foods(self, base, mode):
         global foods_in_cargo, temp_stocks, temp_requirements, temp_surpluses
@@ -591,8 +550,6 @@ class QLearning:
             # print("CURRENT CARGO = {}".format(foods_in_cargo))
             # print("CURRENT VOLUME = {}".format(volume))
 
-
-    
     def check_delivery_status(self):
         global temp_requirements, temp_surpluses, requirement_status, surpluse_status, required_food
 
@@ -606,14 +563,13 @@ class QLearning:
                 else:
                     if name in required_food:
                         required_food.remove(name)
-        
+
         for base, s in enumerate(temp_surpluses):
             surpluse_status[base] = 1
             for name, quantity in s.items():
                 if quantity >= 1 and name in required_food:
                     surpluse_status[base] = 0
                     break
-
 
     def normalize_Q(self):
         max_Q = self.Q.max()
@@ -622,11 +578,9 @@ class QLearning:
         rate = 100.0 / max_Q
         self.Q = self.Q * rate
 
-
-
-
     def print_distance_graph(self):
-        x = np.array([i*GREEDY_CYCLE for i in range(len(self.greedy_distance))])
+        x = np.array(
+            [i * GREEDY_CYCLE for i in range(len(self.greedy_distance))])
         y = np.array(self.greedy_distance)
         plt.plot(x, y)
         plt.ylim(0,)
@@ -638,8 +592,6 @@ class QLearning:
         # plt.savefig(os.path.join(DIR_PATH, "img/tsp{}".format(self.generation)))
         return
 
-
-
     def save_result(self):
         with open(os.path.join(DIR_PATH, "result/result.csv"), "w", newline='') as f:
             writer = csv.writer(f)
@@ -647,13 +599,10 @@ class QLearning:
             writer.writerows(self.result)
 
 
-
 if __name__ == '__main__':
     success_count = 0
     failed_count = 0
     distance_history = []
-    
-
 
     for i in range(1):
         # print("---- Trial:{} ----".format(i))
@@ -677,7 +626,3 @@ if __name__ == '__main__':
 
     print("SUCCESS : ", success_count)
     print("FAILED : ", failed_count)
-
-
-
-
